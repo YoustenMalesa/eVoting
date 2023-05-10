@@ -76,22 +76,20 @@ public class UserService {
     public SignInResponseDto signIn(SignInDto signInDto) {
         User user = userRepository.findByEmail(signInDto.getEmail());
         if(Objects.isNull(user))
-            throw new AuthenticationFailedException("User is not valid");
+            return new SignInResponseDto("failure", "Login failed. Bad credentials.", false);
+            //throw new AuthenticationFailedException("");
         try {
             if(!user.getPassword().equals(hashPassword(signInDto.getPassword())))
-                throw new AuthenticationFailedException("Password is not correct");
+                return new SignInResponseDto("failure", "Login failed. Bad credentials.", false);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
 
         if(!user.isActive()) {
-            throw new CustomException("User account not active. Contact admin.");
+            return new SignInResponseDto("failure", "User account not active. Contact admin.", false);
         }
 
         AuthenticationToken authenticationToken=authenticationService.getToken(user);
-
-        if(Objects.isNull(authenticationToken))
-            throw new CustomException("Token is present");
         return new SignInResponseDto("success", authenticationToken.getToken(), user.isActive());
     }
 
