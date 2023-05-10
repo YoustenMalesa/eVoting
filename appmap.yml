@@ -1,0 +1,3 @@
+name: e-commerce-app
+packages:
+- path: com.mrkenobii.ecommerceapp
