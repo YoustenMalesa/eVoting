@@ -28,9 +28,17 @@ public class UserService {
     private final AuthenticationService authenticationService;
     @Transactional
     public SignupResponseDto signup(SignupDto signupDto) {
+        String org = getOrganization(signupDto.getEmail());
+        Organization organization = organizationRepository.findByDomain(org);
 
-        if (Objects.nonNull(userRepository.findByEmail(signupDto.getEmail())))
-            throw new CustomException("User already present");
+        if(organization == null) {
+            return new SignupResponseDto("failure", "Organization with domain " + org + " does not exist.");
+        }
+
+        if (Objects.nonNull(userRepository.findByEmail(signupDto.getEmail()))) {
+            return new SignupResponseDto("failure", "User already present");
+        }
+
         String encryptedPassword = signupDto.getPassword();
         try {
             encryptedPassword = hashPassword(encryptedPassword);
@@ -41,13 +49,7 @@ public class UserService {
         user.setEmail(signupDto.getEmail());
         user.setFirstName(signupDto.getFirstName());
         user.setPassword(encryptedPassword);
-        String org = getOrganization(user.getEmail());
         user.setOrganization(org.toUpperCase());
-
-        Organization organization = organizationRepository.findByDomain(user.getOrganization());
-        if(organization == null) {
-            throw new CustomException("Organization with domain " + org + " does not exist.");
-        }
 
         userRepository.save(user);
 
@@ -75,6 +77,13 @@ public class UserService {
 
     public SignInResponseDto signIn(SignInDto signInDto) {
         User user = userRepository.findByEmail(signInDto.getEmail());
+        String org = getOrganization(signInDto.getEmail());
+        Organization organization = organizationRepository.findByDomain(org);
+
+        if(organization == null) {
+            return new SignInResponseDto("failure", "Organization with the domain does not exist.", false);
+        }
+
         if(Objects.isNull(user))
             return new SignInResponseDto("failure", "Login failed. Bad credentials.", false);
             //throw new AuthenticationFailedException("");
